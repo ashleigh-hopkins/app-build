@@ -113782,7 +113782,7 @@ async function runOtaPipeline(config2, projectDir) {
   const platformDistDir = path31.join(projectDir, "dist", config2.platform);
   const distDir = await runExpoExport(config2.platform, projectDir, platformDistDir);
   info("Step: Generate manifest");
-  const rawBaseUrl = (config2.updatesConfig?.url || "").replace(/\/+$/, "");
+  const rawBaseUrl = (config2.updatesConfig?.url || "").replace(/\/+$/, "").replace(/\/manifest\.json$/, "");
   if (!rawBaseUrl) {
     warning("updates.url not set in app-build.json \u2014 manifest asset URLs will be relative.");
   }

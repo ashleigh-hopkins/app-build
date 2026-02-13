@@ -393,7 +393,7 @@ async function runOtaPipeline(config: ResolvedConfig, projectDir: string): Promi
 
   // Generate manifest with platform-prefixed asset URLs
   core.info('Step: Generate manifest');
-  const rawBaseUrl = (config.updatesConfig?.url || '').replace(/\/+$/, '');
+  const rawBaseUrl = (config.updatesConfig?.url || '').replace(/\/+$/, '').replace(/\/manifest\.json$/, '');
   if (!rawBaseUrl) {
     core.warning('updates.url not set in app-build.json — manifest asset URLs will be relative.');
   }
