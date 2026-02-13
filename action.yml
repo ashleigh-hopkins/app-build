@@ -1,0 +1,165 @@
+name: "app-build"
+description: "Fully self-hosted GitHub Action for Expo/React Native build, submit, and OTA updates. Zero Expo server dependency."
+author: "ashleigh-hopkins"
+branding:
+  icon: "smartphone"
+  color: "blue"
+
+inputs:
+  # Required
+  platform:
+    description: "Target platform: ios | android"
+    required: true
+
+  # Optional — build
+  profile:
+    description: "Build profile from app-build.json (e.g. development, preview, production)"
+    required: false
+    default: "production"
+  config:
+    description: "Path to app-build.json config file"
+    required: false
+    default: "./app-build.json"
+
+  # Optional — submission
+  submit:
+    description: "Submit to App Store / Google Play after build"
+    required: false
+    default: "false"
+
+  # Optional — OTA
+  ota:
+    description: "Export an OTA update instead of a full native build"
+    required: false
+    default: "false"
+
+  # Optional — monorepo
+  working-directory:
+    description: "Working directory for the app (e.g., 'app/' for monorepos). Defaults to repository root."
+    required: false
+
+  # Optional — behavior
+  version-bump:
+    description: "Auto-increment build number (iOS buildNumber / Android versionCode)"
+    required: false
+    default: "false"
+  version-strategy:
+    description: "Version bump strategy: app-json | git-tag | git-commit-count | timestamp"
+    required: false
+    default: "app-json"
+  version-git-tag-pattern:
+    description: "Git tag glob pattern for git-tag strategy (e.g. 'v*')"
+    required: false
+    default: "v*"
+  cache:
+    description: "Cache node_modules, CocoaPods, Gradle, and Ruby gems"
+    required: false
+    default: "true"
+  fingerprint:
+    description: "Enable @expo/fingerprint to detect native changes. When enabled, skips native build and routes to OTA pipeline if only JS changed."
+    required: false
+    default: "false"
+  skip-prebuild:
+    description: "Skip 'expo prebuild' step. Use when native directories (ios/android) are pre-committed."
+    required: false
+    default: "false"
+  prebuild-clean:
+    description: "Run 'expo prebuild --clean' to regenerate native directories from scratch."
+    required: false
+    default: "false"
+  node-version:
+    description: "Node.js version to use"
+    required: false
+    default: "20"
+  fastlane-version:
+    description: "Fastlane version to install (use 'latest' for most recent)"
+    required: false
+    default: "latest"
+  xcode-version:
+    description: "Xcode version to use (e.g., '16.2', '26'). Runs xcode-select on the runner. Only applies to iOS builds on macOS."
+    required: false
+  environment:
+    description: "Environment variables to set for the build (JSON object, e.g., '{\"APP_ENV\": \"production\", \"API_URL\": \"https://api.example.com\"}')"
+    required: false
+
+  # iOS build overrides
+  ios-scheme:
+    description: "Xcode scheme to build (overrides config file). For projects with multiple schemes (e.g., 'MyApp-Production')."
+    required: false
+  ios-build-configuration:
+    description: "Xcode build configuration (overrides config file). Supports custom configurations like 'Release-Production'."
+    required: false
+
+  # iOS signing — manual
+  ios-certificate-p12:
+    description: "Base64-encoded iOS distribution certificate (.p12)"
+    required: false
+  ios-certificate-password:
+    description: "Password for the iOS distribution certificate"
+    required: false
+  ios-provisioning-profile:
+    description: "Base64-encoded iOS provisioning profile (.mobileprovision)"
+    required: false
+  ios-extension-profiles:
+    description: "JSON map of bundle ID to base64-encoded provisioning profile for app extensions"
+    required: false
+
+  # iOS signing — match (alternative to manual)
+  match-password:
+    description: "Fastlane match encryption passphrase"
+    required: false
+  match-git-private-key:
+    description: "Base64-encoded SSH private key for the match git repository"
+    required: false
+
+  # iOS submission
+  asc-api-key-id:
+    description: "App Store Connect API Key ID"
+    required: false
+  asc-api-issuer-id:
+    description: "App Store Connect API Issuer ID"
+    required: false
+  asc-api-key-p8:
+    description: "Base64-encoded App Store Connect API key (.p8)"
+    required: false
+
+  # Android signing
+  android-keystore:
+    description: "Base64-encoded Android upload keystore (.jks/.keystore)"
+    required: false
+  android-keystore-password:
+    description: "Password for the Android keystore"
+    required: false
+  android-key-alias:
+    description: "Key alias within the Android keystore"
+    required: false
+  android-key-password:
+    description: "Password for the Android key"
+    required: false
+
+  # Android submission
+  google-play-service-account:
+    description: "Base64-encoded Google Play service account JSON key"
+    required: false
+
+outputs:
+  artifact-path:
+    description: "Path to the build artifact (.ipa, .aab, or .apk)"
+  build-number:
+    description: "Build number used (iOS buildNumber or Android versionCode)"
+  build-mode:
+    description: "Whether a native build or OTA update was performed: 'native' | 'ota' | 'full'"
+  fingerprint-hash:
+    description: "Native fingerprint hash (only set when fingerprint is enabled)"
+  submission-status:
+    description: "Store submission result: submitted | skipped | failed"
+  ota-update-id:
+    description: "OTA update UUID (only set when ota is true)"
+  ota-manifest-url:
+    description: "OTA manifest URL (only set when ota is true)"
+
+runs:
+  using: "node20"
+  main: "dist/index.js"
+  post: "dist/cleanup/index.js"
+  post-if: "always()"

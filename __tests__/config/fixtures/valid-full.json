@@ -1,0 +1,70 @@
+{
+  "build": {
+    "development": {
+      "ios": {
+        "scheme": "MyApp",
+        "buildConfiguration": "Debug",
+        "exportMethod": "development"
+      },
+      "android": {
+        "buildType": "debug"
+      }
+    },
+    "preview": {
+      "ios": {
+        "scheme": "MyApp",
+        "buildConfiguration": "Release",
+        "exportMethod": "ad-hoc"
+      },
+      "android": {
+        "buildType": "release"
+      }
+    },
+    "production": {
+      "ios": {
+        "scheme": "MyApp",
+        "buildConfiguration": "Release",
+        "exportMethod": "app-store"
+      },
+      "android": {
+        "buildType": "release",
+        "aab": true
+      }
+    }
+  },
+  "submit": {
+    "ios": {
+      "ascAppId": "1234567890"
+    },
+    "android": {
+      "packageName": "com.example.myapp",
+      "track": "internal"
+    }
+  },
+  "signing": {
+    "ios": {
+      "method": "match",
+      "type": "appstore",
+      "storage": "git",
+      "gitUrl": "git@github.com:myorg/certificates.git",
+      "readonly": true
+    },
+    "android": {
+      "method": "manual"
+    }
+  },
+  "updates": {
+    "enabled": true,
+    "url": "https://updates.example.com/api/manifest",
+    "storage": {
+      "type": "s3",
+      "bucket": "my-app-updates",
+      "region": "us-east-1",
+      "prefix": "updates/"
+    }
+  },
+  "version": {
+    "autoIncrement": true,
+    "source": "app.json"
+  }
+}

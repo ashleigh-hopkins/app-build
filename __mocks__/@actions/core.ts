@@ -1,0 +1,13 @@
+export const info = jest.fn();
+export const warning = jest.fn();
+export const error = jest.fn();
+export const debug = jest.fn();
+export const setFailed = jest.fn();
+export const setSecret = jest.fn();
+export const setOutput = jest.fn();
+export const getInput = jest.fn();
+export const getBooleanInput = jest.fn();
+export const addPath = jest.fn();
+export const exportVariable = jest.fn();
+export const startGroup = jest.fn();
+export const endGroup = jest.fn();

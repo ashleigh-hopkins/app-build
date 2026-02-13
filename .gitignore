@@ -1,0 +1,39 @@
+node_modules/
+# Only esbuild bundles in dist/ are tracked (dist/index.js, dist/cleanup/index.js)
+# Ignore tsc output and other generated files
+dist/**/*.js
+dist/**/*.js.map
+dist/**/*.d.ts
+dist/**/*.d.ts.map
+!dist/index.js
+!dist/index.js.map
+!dist/cleanup/index.js
+!dist/cleanup/index.js.map
+coverage/
+/build/
+
+# Credentials (never commit)
+*.p12
+*.p8
+*.mobileprovision
+*.keystore
+*.jks
+credentials.json
+
+# Temp files
+*.tmp
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Claude context (contains project-specific details)
+.claude/
+
+# Fastlane generated
+Fastfile
+fastlane/
+.env

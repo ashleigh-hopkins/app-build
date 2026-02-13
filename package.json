@@ -1,0 +1,48 @@
+{
+  "name": "app-build",
+  "version": "1.0.0",
+  "description": "Fully self-hosted GitHub Action for Expo/React Native build, submit, and OTA updates",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "package": "node esbuild.config.mjs",
+    "test": "jest --verbose",
+    "test:coverage": "jest --coverage --verbose",
+    "lint": "eslint src/ __tests__/",
+    "format": "prettier --write 'src/**/*.ts' '__tests__/**/*.ts'",
+    "format:check": "prettier --check 'src/**/*.ts' '__tests__/**/*.ts'"
+  },
+  "keywords": [
+    "expo",
+    "react-native",
+    "github-action",
+    "fastlane",
+    "ios",
+    "android",
+    "build",
+    "deploy"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@actions/artifact": "^6.1.0",
+    "@actions/cache": "^6.0.0",
+    "@actions/core": "^3.0.0",
+    "@actions/exec": "^3.0.0",
+    "@actions/glob": "^0.6.1",
+    "@actions/io": "^3.0.2",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^25.2.2",
+    "@typescript-eslint/eslint-plugin": "^8.55.0",
+    "@typescript-eslint/parser": "^8.55.0",
+    "esbuild": "^0.27.3",
+    "eslint": "^9.39.2",
+    "jest": "^30.2.0",
+    "prettier": "^3.8.1",
+    "ts-jest": "^29.4.6",
+    "typescript": "^5.9.3"
+  }
+}
