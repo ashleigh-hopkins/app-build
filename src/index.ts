@@ -384,16 +384,20 @@ async function runOtaPipeline(config: ResolvedConfig, projectDir: string): Promi
   const runtimeVersion = await readRuntimeVersion(projectDir);
   core.info(`Runtime version: ${runtimeVersion}`);
 
-  // Export
+  // Export to platform-specific subdirectory (dist/<platform>/)
+  // This enables multi-platform OTA on static hosts (GitHub Pages, plain S3)
+  // where header-based routing isn't available.
   core.info('Step: Export (expo export)');
-  const distDir = await runExpoExport(config.platform, projectDir);
+  const platformDistDir = path.join(projectDir, 'dist', config.platform);
+  const distDir = await runExpoExport(config.platform, projectDir, platformDistDir);
 
-  // Generate manifest
+  // Generate manifest with platform-prefixed asset URLs
   core.info('Step: Generate manifest');
-  const baseUrl = config.updatesConfig?.url || '';
-  if (!baseUrl) {
+  const rawBaseUrl = (config.updatesConfig?.url || '').replace(/\/+$/, '');
+  if (!rawBaseUrl) {
     core.warning('updates.url not set in app-build.json — manifest asset URLs will be relative.');
   }
+  const baseUrl = rawBaseUrl ? `${rawBaseUrl}/${config.platform}` : '';
   const manifest = await generateManifest({
     distDir,
     runtimeVersion,
@@ -404,7 +408,7 @@ async function runOtaPipeline(config: ResolvedConfig, projectDir: string): Promi
   await writeManifest(manifest, manifestPath);
 
   core.setOutput('ota-update-id', manifest.id);
-  core.setOutput('ota-manifest-url', `${baseUrl}/manifest.json`);
+  core.setOutput('ota-manifest-url', `${rawBaseUrl}/${config.platform}/manifest.json`);
 
   // Upload
   if (config.updatesConfig?.storage) {

@@ -113779,12 +113779,14 @@ async function runOtaPipeline(config2, projectDir) {
   const runtimeVersion = await readRuntimeVersion(projectDir);
   info(`Runtime version: ${runtimeVersion}`);
   info("Step: Export (expo export)");
-  const distDir = await runExpoExport(config2.platform, projectDir);
+  const platformDistDir = path31.join(projectDir, "dist", config2.platform);
+  const distDir = await runExpoExport(config2.platform, projectDir, platformDistDir);
   info("Step: Generate manifest");
-  const baseUrl2 = config2.updatesConfig?.url || "";
-  if (!baseUrl2) {
+  const rawBaseUrl = (config2.updatesConfig?.url || "").replace(/\/+$/, "");
+  if (!rawBaseUrl) {
     warning("updates.url not set in app-build.json \u2014 manifest asset URLs will be relative.");
   }
+  const baseUrl2 = rawBaseUrl ? `${rawBaseUrl}/${config2.platform}` : "";
   const manifest = await generateManifest({
     distDir,
     runtimeVersion,
@@ -113794,7 +113796,7 @@ async function runOtaPipeline(config2, projectDir) {
   const manifestPath = `${distDir}/manifest.json`;
   await writeManifest(manifest, manifestPath);
   setOutput("ota-update-id", manifest.id);
-  setOutput("ota-manifest-url", `${baseUrl2}/manifest.json`);
+  setOutput("ota-manifest-url", `${rawBaseUrl}/${config2.platform}/manifest.json`);
   if (config2.updatesConfig?.storage) {
     info("Step: Upload");
     await uploadOtaUpdate({
