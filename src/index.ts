@@ -403,6 +403,7 @@ async function runOtaPipeline(config: ResolvedConfig, projectDir: string): Promi
     runtimeVersion,
     baseUrl,
     platform: config.platform,
+    projectDir,
   });
   const manifestPath = `${distDir}/manifest.json`;
   await writeManifest(manifest, manifestPath);

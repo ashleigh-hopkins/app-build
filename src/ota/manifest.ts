@@ -164,13 +164,62 @@ function scanAssetsDir(assetsDir: string): string[] {
   return files;
 }
 
+/**
+ * Build the `extra` field for the OTA manifest.
+ *
+ * expo-updates requires `extra.scopeKey` — without it, the native
+ * ExpoUpdatesManifest.scopeKey() accessor calls requiredValue() which
+ * raises an NSException (SIGABRT) and crashes the app on launch.
+ *
+ * The scopeKey should be the normalized URL origin of the updates URL,
+ * matching what expo-updates uses internally via UpdatesConfig.normalizedURLOrigin().
+ *
+ * If a projectDir is provided, also resolves eas.projectId from the app config.
+ */
+async function buildManifestExtra(
+  baseUrl: string,
+  projectDir?: string,
+): Promise<Record<string, unknown>> {
+  // scopeKey = the URL origin (scheme + host), matching expo-updates' normalizedURLOrigin()
+  let scopeKey: string;
+  try {
+    const url = new URL(baseUrl);
+    scopeKey = url.origin;
+  } catch {
+    // baseUrl might be relative or empty — use it as-is
+    scopeKey = baseUrl || 'unknown';
+  }
+
+  const extra: Record<string, unknown> = { scopeKey };
+
+  // Try to resolve eas.projectId from the app config
+  if (projectDir) {
+    try {
+      const { stdout } = await runCommand('npx', ['expo', 'config', '--type', 'public', '--json'], {
+        cwd: projectDir,
+      });
+      const resolved = JSON.parse(stdout.trim()) as Record<string, unknown>;
+      const configExtra = resolved.extra as Record<string, unknown> | undefined;
+      const eas = configExtra?.eas as Record<string, unknown> | undefined;
+      if (eas?.projectId) {
+        extra.eas = { projectId: eas.projectId };
+      }
+    } catch {
+      // Config resolution failed — scopeKey alone is sufficient
+    }
+  }
+
+  return extra;
+}
+
 export async function generateManifest(params: {
   distDir: string;
   runtimeVersion: string;
   baseUrl: string;
   platform: string;
+  projectDir?: string;
 }): Promise<UpdateManifest> {
-  const { distDir, runtimeVersion, baseUrl, platform } = params;
+  const { distDir, runtimeVersion, baseUrl, platform, projectDir } = params;
 
   const id = crypto.randomUUID();
   const createdAt = new Date().toISOString();
@@ -202,6 +251,10 @@ export async function generateManifest(params: {
     );
   }
 
+  // Build the `extra` field — expo-updates requires extra.scopeKey at minimum.
+  // Without it, ExpoUpdatesManifest.scopeKey() raises NSException (SIGABRT).
+  const extra = await buildManifestExtra(baseUrl, projectDir);
+
   return {
     id,
     createdAt,
@@ -209,7 +262,7 @@ export async function generateManifest(params: {
     launchAsset,
     assets,
     metadata: {},
-    extra: {},
+    extra,
   };
 }
 

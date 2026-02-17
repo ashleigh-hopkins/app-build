@@ -113279,8 +113279,33 @@ function scanAssetsDir(assetsDir) {
   walk(assetsDir);
   return files;
 }
+async function buildManifestExtra(baseUrl2, projectDir) {
+  let scopeKey;
+  try {
+    const url3 = new URL(baseUrl2);
+    scopeKey = url3.origin;
+  } catch {
+    scopeKey = baseUrl2 || "unknown";
+  }
+  const extra = { scopeKey };
+  if (projectDir) {
+    try {
+      const { stdout } = await runCommand("npx", ["expo", "config", "--type", "public", "--json"], {
+        cwd: projectDir
+      });
+      const resolved = JSON.parse(stdout.trim());
+      const configExtra = resolved.extra;
+      const eas = configExtra?.eas;
+      if (eas?.projectId) {
+        extra.eas = { projectId: eas.projectId };
+      }
+    } catch {
+    }
+  }
+  return extra;
+}
 async function generateManifest(params) {
-  const { distDir, runtimeVersion, baseUrl: baseUrl2, platform: platform2 } = params;
+  const { distDir, runtimeVersion, baseUrl: baseUrl2, platform: platform2, projectDir } = params;
   const id = crypto9.randomUUID();
   const createdAt = (/* @__PURE__ */ new Date()).toISOString();
   const bundlePath = findBundleFile(distDir, platform2);
@@ -113302,6 +113327,7 @@ async function generateManifest(params) {
       (file2) => buildAssetInfo(file2, baseUrl2, distDir)
     );
   }
+  const extra = await buildManifestExtra(baseUrl2, projectDir);
   return {
     id,
     createdAt,
@@ -113309,7 +113335,7 @@ async function generateManifest(params) {
     launchAsset,
     assets,
     metadata: {},
-    extra: {}
+    extra
   };
 }
 async function writeManifest(manifest, outputPath) {
@@ -113791,7 +113817,8 @@ async function runOtaPipeline(config2, projectDir) {
     distDir,
     runtimeVersion,
     baseUrl: baseUrl2,
-    platform: config2.platform
+    platform: config2.platform,
+    projectDir
   });
   const manifestPath = `${distDir}/manifest.json`;
   await writeManifest(manifest, manifestPath);
