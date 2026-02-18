@@ -192,20 +192,29 @@ async function buildManifestExtra(
 
   const extra: Record<string, unknown> = { scopeKey };
 
-  // Try to resolve eas.projectId from the app config
+  // Resolve the full app config and include it as `expoClient`.
+  // expo-constants reads this at runtime to provide app.json values to JS.
+  // Without it, expo-linking crashes: "needs access to the expo-constants manifest
+  // to determine what URI scheme to use".
   if (projectDir) {
     try {
       const { stdout } = await runCommand('npx', ['expo', 'config', '--type', 'public', '--json'], {
         cwd: projectDir,
       });
       const resolved = JSON.parse(stdout.trim()) as Record<string, unknown>;
+
+      // Include the full config as expoClient (what EAS Update does)
+      extra.expoClient = resolved;
+
+      // Also extract eas.projectId for code signing verification
       const configExtra = resolved.extra as Record<string, unknown> | undefined;
       const eas = configExtra?.eas as Record<string, unknown> | undefined;
       if (eas?.projectId) {
         extra.eas = { projectId: eas.projectId };
       }
     } catch {
-      // Config resolution failed — scopeKey alone is sufficient
+      // Config resolution failed — scopeKey alone is sufficient for update loading,
+      // but expo-constants features (linking, scheme) won't work without expoClient.
     }
   }
 

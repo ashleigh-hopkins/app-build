@@ -113294,6 +113294,7 @@ async function buildManifestExtra(baseUrl2, projectDir) {
         cwd: projectDir
       });
       const resolved = JSON.parse(stdout.trim());
+      extra.expoClient = resolved;
       const configExtra = resolved.extra;
       const eas = configExtra?.eas;
       if (eas?.projectId) {
