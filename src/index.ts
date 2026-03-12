@@ -12,8 +12,9 @@ import { DEFAULT_CONFIG_PATH, DEFAULT_PROFILE } from './config/defaults';
 import { setupNode, installDependencies } from './setup/node';
 import { setupRubyAndFastlane } from './setup/ruby';
 import { restoreCaches, saveCaches } from './setup/cache';
-import { setupAndroidSdk, writeLocalProperties } from './setup/android-sdk';
+import { setupAndroidSdk, writeLocalProperties, configureGradleProperties } from './setup/android-sdk';
 import { selectXcodeVersion } from './setup/xcode';
+import { setupJava } from './setup/java';
 // Prebuild
 import { runExpoPrebuild, verifyNativeProject } from './prebuild/expo';
 import { runPodInstall } from './prebuild/pods';
@@ -149,6 +150,8 @@ function readActionInputs(): ActionInputs {
     androidKeyPassword: core.getInput('android-key-password') || undefined,
     googlePlayServiceAccount: core.getInput('google-play-service-account') || undefined,
     xcodeVersion: core.getInput('xcode-version') || undefined,
+    javaVersion: core.getInput('java-version') || undefined,
+    androidArchitectures: core.getInput('android-architectures') || undefined,
     versionStrategy: core.getInput('version-strategy') || undefined,
     versionGitTagPattern: core.getInput('version-git-tag-pattern') || undefined,
     iosScheme: core.getInput('ios-scheme') || undefined,
@@ -189,8 +192,10 @@ async function runSetup(config: ResolvedConfig, projectDir: string): Promise<voi
   await installDependencies(projectDir);
   await setupRubyAndFastlane(config.fastlaneVersion, projectDir, config.platform);
 
-  // Android SDK setup (detect and export ANDROID_HOME)
+  // Android-specific setup
   if (config.platform === 'android') {
+    core.info('Step: Java setup');
+    await setupJava(config.javaVersion);
     core.info('Step: Android SDK setup');
     await setupAndroidSdk();
   }
@@ -219,6 +224,10 @@ async function runAndroidBuildPipeline(config: ResolvedConfig, projectDir: strin
 
   // Write local.properties so Gradle can find the SDK
   await writeLocalProperties(projectDir);
+
+  // Configure Gradle JVM heap and architecture filters
+  const architectures = config.android.architectures || config.androidArchitectures;
+  await configureGradleProperties(projectDir, architectures);
 
   core.info('Step: Install credentials (android)');
   const creds = config.credentials;

@@ -15,6 +15,7 @@ export type IosBuildConfig = z.infer<typeof IosBuildConfigSchema>;
 export const AndroidBuildConfigSchema = z.object({
   buildType: z.enum(['debug', 'release']),
   aab: z.boolean().optional(),
+  architectures: z.string().optional(),
 });
 
 export type AndroidBuildConfig = z.infer<typeof AndroidBuildConfigSchema>;

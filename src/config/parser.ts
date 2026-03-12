@@ -19,6 +19,8 @@ import {
   DEFAULT_IOS_BUILD_CONFIGURATION,
   DEFAULT_ANDROID_BUILD_TYPE,
   DEFAULT_ANDROID_AAB,
+  DEFAULT_ANDROID_ARCHITECTURES,
+  DEFAULT_JAVA_VERSION,
   DEFAULT_IOS_SIGNING_METHOD,
   DEFAULT_ANDROID_SIGNING_METHOD,
   DEFAULT_VERSION_SOURCE,
@@ -41,6 +43,8 @@ export interface ActionInputs {
   nodeVersion: string;
   fastlaneVersion: string;
   xcodeVersion?: string;
+  javaVersion?: string;
+  androidArchitectures?: string;
   versionStrategy?: string;
   versionGitTagPattern?: string;
   iosScheme?: string;
@@ -88,6 +92,8 @@ export interface ResolvedConfig {
   nodeVersion: string;
   fastlaneVersion: string;
   xcodeVersion?: string;
+  javaVersion?: string;
+  androidArchitectures?: string;
 
   // Submit config
   submitConfig?: SubmitConfig;
@@ -230,6 +236,8 @@ export function mergeActionInputs(
     nodeVersion: inputs.nodeVersion || DEFAULT_NODE_VERSION,
     fastlaneVersion: inputs.fastlaneVersion || DEFAULT_FASTLANE_VERSION,
     xcodeVersion: inputs.xcodeVersion,
+    javaVersion: inputs.javaVersion || DEFAULT_JAVA_VERSION,
+    androidArchitectures: inputs.androidArchitectures || DEFAULT_ANDROID_ARCHITECTURES,
     versionStrategy: inputs.versionStrategy,
     versionGitTagPattern: inputs.versionGitTagPattern,
 
@@ -279,6 +287,11 @@ export function mergeActionInputs(
       buildType: DEFAULT_ANDROID_BUILD_TYPE,
       aab: DEFAULT_ANDROID_AAB,
     } as AndroidBuildConfig) };
+
+    // Action input overrides config file for architectures
+    if (inputs.androidArchitectures) {
+      resolved.android.architectures = inputs.androidArchitectures;
+    }
   }
 
   return resolved;

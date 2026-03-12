@@ -78,6 +78,14 @@ inputs:
   xcode-version:
     description: "Xcode version to use (e.g., '16.2', '26'). Runs xcode-select on the runner. Only applies to iOS builds on macOS."
     required: false
+  java-version:
+    description: "Java/JDK version for Android builds (e.g., '17', '21'). Validates the runner's JDK matches. Only applies to Android."
+    required: false
+    default: "17"
+  android-architectures:
+    description: "Comma-separated list of Android ABIs to build (e.g., 'arm64-v8a', 'arm64-v8a,armeabi-v7a', 'all'). Defaults to arm64-v8a."
+    required: false
+    default: "arm64-v8a"
   environment:
     description: "Environment variables to set for the build (JSON object, e.g., '{\"APP_ENV\": \"production\", \"API_URL\": \"https://api.example.com\"}')"
     required: false

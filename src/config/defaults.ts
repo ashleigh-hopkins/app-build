@@ -25,6 +25,12 @@ export const DEFAULT_ANDROID_BUILD_TYPE = 'release';
 /** Whether to produce an AAB (true) or APK (false) by default. */
 export const DEFAULT_ANDROID_AAB = true;
 
+/** Default Android architectures — arm64-v8a covers 99%+ of production devices. */
+export const DEFAULT_ANDROID_ARCHITECTURES = 'arm64-v8a';
+
+/** Default Java/JDK version for Android builds. */
+export const DEFAULT_JAVA_VERSION = '17';
+
 /** Default iOS code-signing method. */
 export const DEFAULT_IOS_SIGNING_METHOD = 'manual';
 
