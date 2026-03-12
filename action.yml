@@ -70,7 +70,7 @@ inputs:
   node-version:
     description: "Node.js version to use"
     required: false
-    default: "20"
+    default: "22"
   fastlane-version:
     description: "Fastlane version to install (use 'latest' for most recent)"
     required: false
@@ -159,7 +159,7 @@ outputs:
     description: "OTA manifest URL (only set when ota is true)"
 
 runs:
-  using: "node20"
+  using: "node22"
   main: "dist/index.js"
   post: "dist/cleanup/index.js"
   post-if: "always()"
