@@ -6,7 +6,7 @@ Thanks for your interest in contributing to `app-build`. This guide covers how t
 
 ## Prerequisites
 
-- **Node.js 20+** (the action runs on `node20`)
+- **Node.js 22+** (the action runs on `node24`)
 - **Ruby 3.x** (for Fastlane -- macOS includes this)
 - **Git**
 
@@ -14,6 +14,7 @@ Optional (for full integration testing):
 
 - **Xcode 16.1+** (iOS builds, macOS only)
 - **Android SDK** (Android builds)
+- **JDK 17+** (Android builds -- the action selects from pre-installed JDKs on the runner)
 - **CocoaPods** (`gem install cocoapods`)
 
 ---
@@ -82,7 +83,8 @@ src/
 ├── setup/
 │   ├── node.ts                 # Node.js version check + package manager detection
 │   ├── ruby.ts                 # Ruby + Bundler + Fastlane setup
-│   ├── android-sdk.ts          # ANDROID_HOME detection + local.properties
+│   ├── java.ts                 # JDK version selection for Android
+│   ├── android-sdk.ts          # ANDROID_HOME detection + Gradle config + local.properties
 │   └── cache.ts                # @actions/cache restore/save
 ├── prebuild/
 │   ├── expo.ts                 # npx expo prebuild + verify
@@ -171,20 +173,20 @@ To test your changes on real CI, push your branch and update the fixture workflo
 
 ## Node.js Version
 
-The action uses `node20` as its runtime (set in `action.yml`). If your project needs a specific Node.js version, use `actions/setup-node` in your workflow before this action:
+The action uses `node24` as its runtime (set in `action.yml`). If your project needs a specific Node.js version, use `actions/setup-node` in your workflow before this action:
 
 ```yaml
 steps:
   - uses: actions/checkout@v4
   - uses: actions/setup-node@v4
     with:
-      node-version: '20'
+      node-version: '22'
   - uses: ashleigh-hopkins/app-build@v1
     with:
       platform: ios
 ```
 
-The `node-version` input on the action itself currently only checks the major version and warns on mismatch -- it does not install a different version.
+The `node-version` input on the action itself only checks the major version and warns on mismatch -- it does not install a different version.
 
 ---
 

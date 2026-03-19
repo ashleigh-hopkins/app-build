@@ -20,6 +20,7 @@ Zero Expo server dependency. No account, no token, no vendor lock-in.
 - **Credentials from GitHub Secrets** -- you control your own signing keys
 - **Build profiles** -- development, preview, and production configurations in one file
 - **iOS signing** via manual keychain import or Fastlane `match`
+- **Automatic Android build environment** -- JDK selection, Gradle JVM heap, and architecture filtering handled internally (same as iOS handles Xcode)
 - **Automatic version bumping** -- increments `buildNumber` / `versionCode` per build
 
 ---
@@ -65,7 +66,9 @@ jobs:
           android-key-password: ${{ secrets.ANDROID_KEY_PASSWORD }}
 ```
 
-> **Node.js version**: The action checks the installed Node.js major version against the `node-version` input (default `20`) but does not install a different version. If you need a specific version, add [`actions/setup-node`](https://github.com/actions/setup-node) before this action in your workflow.
+> The action selects the correct JDK (default 17) from the runner's pre-installed versions, configures Gradle's JVM heap to 4 GB (preventing OOM during dexing), and filters native architectures to `arm64-v8a` (skipping unnecessary x86 compilation). You do **not** need `actions/setup-java`, `GRADLE_OPTS`, or `ORG_GRADLE_PROJECT_reactNativeArchitectures` in your workflow.
+
+> **Node.js version**: The action checks the installed Node.js major version against the `node-version` input (default `22`) but does not install a different version. If you need a specific version, add [`actions/setup-node`](https://github.com/actions/setup-node) before this action in your workflow.
 
 ---
 
@@ -106,7 +109,8 @@ All configuration lives in a single file: `app-build.json` in your project root.
       },
       "android": {
         "buildType": "release",
-        "aab": true
+        "aab": true,
+        "architectures": "arm64-v8a"
       }
     }
   },
@@ -149,7 +153,7 @@ All configuration lives in a single file: `app-build.json` in your project root.
 **`build`** -- Defines build profiles. Each profile (`development`, `preview`, `production`) contains per-platform settings. The `profile` action input selects which profile to use (default: `production`).
 
 - **iOS fields**: `scheme` (Xcode scheme), `buildConfiguration` (`Debug` or `Release`), `exportMethod` (`development`, `ad-hoc`, `enterprise`, `app-store`).
-- **Android fields**: `buildType` (`debug` or `release`), `aab` (`true` to produce an AAB instead of APK).
+- **Android fields**: `buildType` (`debug` or `release`), `aab` (`true` to produce an AAB instead of APK), `architectures` (comma-separated ABIs, e.g. `arm64-v8a,armeabi-v7a` -- overrides the `android-architectures` action input for this profile).
 
 **`submit`** -- Store submission configuration.
 
@@ -176,25 +180,55 @@ All configuration lives in a single file: `app-build.json` in your project root.
 
 ## Action Inputs
 
+### General
+
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
 | `platform` | Target platform: `ios` or `android` | Yes | -- |
 | `profile` | Build profile from `app-build.json` | No | `production` |
 | `config` | Path to `app-build.json` config file | No | `./app-build.json` |
+| `working-directory` | Working directory for the app (e.g. `app/` for monorepos) | No | repo root |
 | `submit` | Submit to App Store / Google Play after build | No | `false` |
 | `ota` | Export an OTA update instead of a full native build | No | `false` |
+| `environment` | Environment variables for the build (JSON object, e.g. `'{"APP_ENV": "production"}'`) | No | -- |
+
+### Build behaviour
+
+| Input | Description | Required | Default |
+|-------|-------------|----------|---------|
 | `version-bump` | Auto-increment build number (iOS `buildNumber` / Android `versionCode`) | No | `false` |
+| `version-strategy` | Bump strategy: `app-json`, `git-tag`, `git-commit-count`, `timestamp` | No | `app-json` |
+| `version-git-tag-pattern` | Git tag glob for the `git-tag` strategy (e.g. `v*`) | No | `v*` |
 | `cache` | Cache `node_modules`, CocoaPods, Gradle, and Ruby gems | No | `true` |
-| `node-version` | Node.js version to use | No | `20` |
+| `fingerprint` | Enable `@expo/fingerprint` to skip native build when only JS changed | No | `false` |
+| `skip-prebuild` | Skip `expo prebuild` (use when `ios/` / `android/` are committed) | No | `false` |
+| `prebuild-clean` | Run `expo prebuild --clean` to regenerate native dirs from scratch | No | `false` |
+| `node-version` | Expected Node.js major version (checked, not installed) | No | `22` |
 | `fastlane-version` | Fastlane version to install (`latest` for most recent) | No | `latest` |
+
+### iOS
+
+| Input | Description | Required | Default |
+|-------|-------------|----------|---------|
+| `xcode-version` | Xcode version to select (e.g. `16.2`, `26`). Runs `xcode-select` on the runner. | No | runner default |
+| `ios-scheme` | Xcode scheme override (e.g. `MyApp-Production`) | No | from config |
+| `ios-build-configuration` | Xcode build configuration override (e.g. `Release-Production`) | No | from config |
 | `ios-certificate-p12` | Base64-encoded iOS distribution certificate (`.p12`) | No | -- |
 | `ios-certificate-password` | Password for the iOS distribution certificate | No | -- |
 | `ios-provisioning-profile` | Base64-encoded iOS provisioning profile (`.mobileprovision`) | No | -- |
+| `ios-extension-profiles` | JSON map of bundle ID to base64-encoded profile for app extensions | No | -- |
 | `match-password` | Fastlane `match` encryption passphrase | No | -- |
 | `match-git-private-key` | Base64-encoded SSH private key for the `match` git repository | No | -- |
 | `asc-api-key-id` | App Store Connect API Key ID | No | -- |
 | `asc-api-issuer-id` | App Store Connect API Issuer ID | No | -- |
 | `asc-api-key-p8` | Base64-encoded App Store Connect API key (`.p8`) | No | -- |
+
+### Android
+
+| Input | Description | Required | Default |
+|-------|-------------|----------|---------|
+| `java-version` | JDK version for Android builds (selects from runner's pre-installed JDKs) | No | `17` |
+| `android-architectures` | Comma-separated ABIs to build (`arm64-v8a`, `armeabi-v7a`, `x86_64`, or `all`) | No | `arm64-v8a` |
 | `android-keystore` | Base64-encoded Android upload keystore (`.jks` / `.keystore`) | No | -- |
 | `android-keystore-password` | Password for the Android keystore | No | -- |
 | `android-key-alias` | Key alias within the Android keystore | No | -- |
@@ -209,6 +243,8 @@ All configuration lives in a single file: `app-build.json` in your project root.
 |--------|-------------|
 | `artifact-path` | Path to the build artifact (`.ipa`, `.aab`, or `.apk`) |
 | `build-number` | Build number used (iOS `buildNumber` or Android `versionCode`) |
+| `build-mode` | What was performed: `native`, `ota`, or `full` |
+| `fingerprint-hash` | Native fingerprint hash (only set when `fingerprint` is enabled) |
 | `submission-status` | Store submission result: `submitted`, `skipped`, or `failed` |
 | `ota-update-id` | OTA update UUID (only set when `ota` is `true`) |
 | `ota-manifest-url` | OTA manifest URL (only set when `ota` is `true`) |
@@ -506,6 +542,57 @@ At low volume, the EAS free tier wins on cost. At scale, `app-build` is cheaper 
 **Cause**: `Podfile.lock` was generated with a different CocoaPods version than what the runner has installed.
 
 **Fix**: Either update `Podfile.lock` locally with the same CocoaPods version used in CI, or run `pod repo update` before install. If you have a `Gemfile` in your project that pins CocoaPods, the action will use it via `bundle exec pod install`.
+
+### Android Gradle OOM (OutOfMemoryError)
+
+**Symptom**: Gradle fails with `java.lang.OutOfMemoryError: Java heap space` during `mergeExtDexRelease` or R8/D8 dexing.
+
+**Cause**: The default JVM heap (often 2 GB from Expo's generated `gradle.properties`) is not enough for large apps.
+
+**Fix**: The action sets the heap to 4 GB automatically. If you still hit OOM, override it via the `environment` input:
+
+```yaml
+- uses: your-org/app-build@v1
+  with:
+    platform: android
+    environment: '{"GRADLE_OPTS": "-Dorg.gradle.jvmargs=-Xmx6g"}'
+```
+
+### Android JDK version mismatch
+
+**Symptom**: Gradle fails with `Unsupported class file major version` or AGP compatibility errors.
+
+**Cause**: The project's Android Gradle Plugin version requires a specific JDK. For example, AGP 8.x requires JDK 17+.
+
+**Fix**: Set the `java-version` input to match your AGP requirements:
+
+```yaml
+- uses: your-org/app-build@v1
+  with:
+    platform: android
+    java-version: '21'
+```
+
+The action selects from the runner's pre-installed JDKs (GitHub-hosted runners include JDK 8, 11, 17, and 21). If the requested version is not pre-installed, add `actions/setup-java` before the action.
+
+### Android build is slow (compiling for multiple architectures)
+
+**Symptom**: The Android build takes significantly longer than expected, especially during CMake native compilation.
+
+**Cause**: Building for all architectures (`arm64-v8a`, `armeabi-v7a`, `x86`, `x86_64`) instead of just the production-relevant ones.
+
+**Fix**: The action defaults to `arm64-v8a` which covers 99%+ of production devices. To build for additional ABIs (e.g. for testing on emulators), set the `android-architectures` input:
+
+```yaml
+# Production (fast) — default
+android-architectures: 'arm64-v8a'
+
+# Multiple ABIs
+android-architectures: 'arm64-v8a,armeabi-v7a'
+
+# All architectures (slow, rarely needed)
+android-architectures: 'all'
+```
 
 ### Fastlane match race condition
 
